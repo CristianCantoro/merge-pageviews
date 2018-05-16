@@ -2,3 +2,4 @@ sorted_time/
 sorted_page/
 *.gz
 .ipynb_checkpoints/
+*.log
