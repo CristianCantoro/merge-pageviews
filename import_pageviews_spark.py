@@ -12,7 +12,7 @@
 # https://stackoverflow.com/q/17662631/2377454
 
 initial_comment=\
-"""# Wikimedia page request counts for 16/11/2011 (dd/mm/yyyy) 
+"""# Wikimedia page request counts for 16/11/2011 (dd/mm/yyyy)
 #
 # Each line shows 'project page daily-total hourly-counts'
 #
@@ -38,7 +38,6 @@ initial_comment=\
 # Page titles are shown unmodified (preserves sort sequence)
 #"""
 
-from sqlalchemy import create_engine
 import pandas as pd
 import argparse
 import datetime
@@ -125,7 +124,7 @@ if __name__ == "__main__":
 
         with tempfile.NamedTemporaryFile(mode='w+', encoding=encoding) \
                 as uncompressed_file:
-            
+
             writer = csv.writer(uncompressed_file, delimiter='\t', quoting=csv.QUOTE_ALL)
             with gzip.open(input_file, "rt", encoding=encoding, errors='replace') as infile:
                 reader = csv.reader(infile, delimiter=' ')
