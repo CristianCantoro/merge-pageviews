@@ -161,6 +161,8 @@ if __name__ == "__main__":
 
                 uncompressed_file.seek(0)
 
+                logger.info('Read CSV file into pandas DataFrame.')
+
                 # import ipdb; ipdb.set_trace()
                 tmp_df = pd.read_csv(uncompressed_file,
                                      sep='\t',
@@ -173,6 +175,7 @@ if __name__ == "__main__":
                                      encoding='utf-8'
                                      )
 
+                logger.info('Add timestamp to pandas DataFrame.')
                 tmp_df['timestamp'] = timestamp
 
                 logger.info('Converting pandas DataFrame to Spark DataFrame.')
