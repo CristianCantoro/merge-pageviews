@@ -54,8 +54,7 @@ def cli_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument("FILE",
-                        help="Input file.",
-                        nargs='+')
+                        help="Input file.")
     args = parser.parse_args()
 
     parser.add_argument("--encoding",
@@ -72,25 +71,24 @@ def cli_args():
 if __name__ == "__main__":
     args = cli_args()
 
-    input_files = args.FILE
+    input_file = args.FILE
     encoding = args.encoding
 
-    df = pd.concat(pd.read_csv(input_file,
-                                sep=' ',
-                                names=['lang', 'page', 'timestamp', 'views',
-                                       'reqbytes'],
-                                dtype={'lang': str,
-                                       'page': str,
-                                       'views': int,
-                                       'reqbytes': int
-                                       },
-                                parse_dates=[2],
-                                infer_datetime_format=True,
-                                date_parser=date_parser,
-                                header=None,
-                                compression='gzip',
-                                encoding=encoding,
-                                error_bad_lines=False,
-                                low_memory=True
-                                )
-                   )
+    df = pd.read_csv(input_file,
+                     sep=' ',
+                     names=['lang', 'page', 'timestamp', 'views',
+                            'reqbytes'],
+                     dtype={'lang': str,
+                            'page': str,
+                            'views': int,
+                            'reqbytes': int
+                            },
+                     parse_dates=[2],
+                     infer_datetime_format=True,
+                     date_parser=date_parser,
+                     header=None,
+                     compression='gzip',
+                     encoding=encoding,
+                     error_bad_lines=False,
+                     low_memory=True
+                     )
