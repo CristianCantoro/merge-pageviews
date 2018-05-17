@@ -176,4 +176,6 @@ if __name__ == "__main__":
     del tmp_df
     del list_dfs
 
-    sqlctx.createDataFrame(pddf,schema=schema)
+    df = sqlctx.createDataFrame(pddf,schema=schema)
+
+    logger.info('Spark DataFrame created')
