@@ -75,6 +75,14 @@ logger.addHandler(ch)
 ##########
 
 
+def unionAll(*dfs):
+    first, *_ = dfs  # Python 3.x, for 2.x you'll have to unpack manually
+    return first.sql_ctx.createDataFrame(
+        first.sql_ctx._sc.union([df.rdd for df in dfs]),
+        first.schema
+    )
+
+
 def date_parser(timestamp):
     return datetime.datetime.strptime(timestamp, '%Y%m%d-%H%M%S')
 
@@ -166,16 +174,19 @@ if __name__ == "__main__":
                                      )
 
                 tmp_df['timestamp'] = timestamp
-                list_dfs.append(tmp_df)
+
+                logger.info('Converting pandas DataFrame to Spark DataFrame.')
+                tmp_spark_df = sqlctx.createDataFrame(tmp_df,schema=schema)
+                list_dfs.append(tmp_spark_df)
+                del tmp_df
+
                 logger.info('Added DataFrame for file {} to list'.format(input_file))
 
-    logger.info('Concatenate pandas.DataFrames')
-    pddf = pd.concat(list_dfs)
-    logger.info('pandas.DataFrames concatenated')
+    # logger.info('Concatenate pandas.DataFrames')
+    # pddf = pd.concat(list_dfs)
+    # logger.info('pandas.DataFrames concatenated')
 
-    del tmp_df
-    del list_dfs
-
-    df = sqlctx.createDataFrame(pddf,schema=schema)
+    logger.info('Union of all Spark DataFrames.')
+    df = unionAll(*list_dfs)
 
     logger.info('Spark DataFrame created')
