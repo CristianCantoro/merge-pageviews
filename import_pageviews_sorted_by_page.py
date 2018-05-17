@@ -38,7 +38,6 @@ initial_comment=\
 # Page titles are shown unmodified (preserves sort sequence)
 #"""
 
-from sqlalchemy import create_engine
 import pandas as pd
 import argparse
 import datetime
@@ -76,79 +75,22 @@ if __name__ == "__main__":
     input_files = args.FILE
     encoding = args.encoding
 
-    list_dfs = list()
-    for input_file in input_files:
-
-        timestamp = date_parser(os.path.basename(input_file)
-                                       .replace('pagecounts-','')
-                                       .replace('.gz',''))
-
-        with tempfile.NamedTemporaryFile(mode='w+', encoding=encoding) \
-                as uncompressed_file:
-            
-            writer = csv.writer(uncompressed_file, delimiter='\t', quoting=csv.QUOTE_ALL)
-            with gzip.open(input_file, "rt", encoding='utf-8', errors='replace') as infile:
-                reader = csv.reader(infile, delimiter=' ')
-
-
-                while True:
-
-                    try:
-                        line = next(reader)
-                    except StopIteration:
-                        break
-                    except:
-                        continue
-
-                    try:
-                        lang = line[0]
-                        page = line[1]
-                        views = int(line[2])
-                        reqbytes = int(line[3])
-                    except:
-                        pass
-
-                    writer.writerow((lang, page, views, reqbytes))
-
-                uncompressed_file.seek(0)
-
-                # import ipdb; ipdb.set_trace()
-                tmp_df = pd.read_csv(uncompressed_file,
-                                     sep='\t',
-                                     names=['lang', 'page', 'views',
-                                            'reqbytes'],
-                                     dtype={'lang': str,
-                                            'page': str,
-                                            'views': int,
-                                            'reqbytes': int
-                                            },
-                                     header=None,
-                                     encoding='utf-8',
-                                     error_bad_lines=False,
-                                     warn_bad_lines=True,
-                                     low_memory=True
-                                     )
-
-                tmp_df['timestamp'] = timestamp
-                list_dfs.append(tmp_df)
-
-    df = pd.concat(list_dfs)
-    # df = pd.concat((pd.read_csv(input_file,
-    #                             sep=' ',
-    #                             names=['lang', 'page', 'timestamp', 'views',
-    #                                    'reqbytes'],
-    #                             dtype={'lang': str,
-    #                                    'page': str,
-    #                                    'views': int,
-    #                                    'reqbytes': int
-    #                                    },
-    #                             parse_dates=[2],
-    #                             infer_datetime_format=True,
-    #                             date_parser=date_parser,
-    #                             header=None,
-    #                             compression='gzip',
-    #                             encoding=encoding,
-    #                             error_bad_lines=False,
-    #                             low_memory=True
-    #                             )
-    #                 for input_file in input_files))
+    df = pd.concat(pd.read_csv(input_file,
+                                sep=' ',
+                                names=['lang', 'page', 'timestamp', 'views',
+                                       'reqbytes'],
+                                dtype={'lang': str,
+                                       'page': str,
+                                       'views': int,
+                                       'reqbytes': int
+                                       },
+                                parse_dates=[2],
+                                infer_datetime_format=True,
+                                date_parser=date_parser,
+                                header=None,
+                                compression='gzip',
+                                encoding=encoding,
+                                error_bad_lines=False,
+                                low_memory=True
+                                )
+                   )
