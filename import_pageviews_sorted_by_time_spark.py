@@ -56,6 +56,8 @@ findspark.init()
 import pyspark
 from pyspark.sql.types import StructType, StructField
 from pyspark.sql.types import StringType, IntegerType, TimestampType
+from pyspark.sql import functions
+from pyspark.sql.functions import lit
 
 ########## logging
 # create logger with 'spam_application'
@@ -112,84 +114,50 @@ if __name__ == "__main__":
     schema = StructType([StructField("lang", StringType(), False),
                          StructField("page", StringType(), False),
                          StructField("views", IntegerType(), False),
-                         StructField("timestamp", TimestampType(), True)])
+                         StructField("reqbytes", IntegerType(), False)])
 
     input_files = args.FILE
     encoding = args.encoding
 
     list_dfs = list()
     for input_file in input_files:
-        logger.info('Processing file: {}'.format(input_file))
-
-        with gzip.open(input_file, "rt", encoding=encoding, errors='replace') as infile:
-            num_lines = sum(1 for line in infile)
-
-        logger.debug('num_lines: {}'.format(num_lines))
 
         timestamp = date_parser(os.path.basename(input_file)
                                        .replace('pagecounts-','')
                                        .replace('.gz',''))
 
-        with tempfile.NamedTemporaryFile(mode='w+', encoding=encoding) \
-                as uncompressed_file:
+        logger.info('Processing file: {}'.format(input_file))
+        tmp_spark_df = sqlctx.read.csv(
+                            input_file,
+                            header=False,
+                            schema=schema,
+                            sep=' ')
 
-            writer = csv.writer(uncompressed_file, delimiter='\t', quoting=csv.QUOTE_ALL)
-            with gzip.open(input_file, "rt", encoding=encoding, errors='replace') as infile:
-                reader = csv.reader(infile, delimiter=' ')
+        tmp_spark_df = tmp_spark_df.withColumn("timestamp", lit(timestamp))
+        list_dfs.append(tmp_spark_df)
+        del tmp_spark_df
 
-                lncount = 0
-                with progressbar.ProgressBar(max_value=num_lines) as bar:
-                    while True:
-                        lncount += 1
-                        bar.update(lncount)
-
-                        try:
-                            line = next(reader)
-                        except StopIteration:
-                            break
-                        except:
-                            continue
-
-                        try:
-                            lang = line[0]
-                            page = line[1]
-                            views = int(line[2])
-                        except:
-                            pass
-
-                        writer.writerow((lang, page, views))
-
-                uncompressed_file.seek(0)
-
-                logger.info('Read CSV file into pandas DataFrame.')
-
-                # import ipdb; ipdb.set_trace()
-                tmp_df = pd.read_csv(uncompressed_file,
-                                     sep='\t',
-                                     names=['lang', 'page', 'views'],
-                                     dtype={'lang': str,
-                                            'page': str,
-                                            'views': int,
-                                            },
-                                     header=None,
-                                     encoding='utf-8'
-                                     )
-
-                logger.info('Add timestamp to pandas DataFrame.')
-                tmp_df['timestamp'] = timestamp
-
-                logger.info('Converting pandas DataFrame to Spark DataFrame.')
-                tmp_spark_df = sqlctx.createDataFrame(tmp_df,schema=schema)
-                list_dfs.append(tmp_spark_df)
-                del tmp_df
-
-                logger.info('Added DataFrame for file {} to list'.format(input_file))
-
-    # logger.info('Concatenate pandas.DataFrames')
-    # pddf = pd.concat(list_dfs)
-    # logger.info('pandas.DataFrames concatenated')
+        logger.info('Added DataFrame for file {} to list'.format(input_file))
 
     logger.info('Union of all Spark DataFrames.')
     df = unionAll(*list_dfs)
 
     logger.info('Spark DataFrame created')
+
+    df = df.drop('reqbytes')
+
+    grouped_df = (df
+        .select(['lang',
+                 'page',
+                 functions.date_format('timestamp','yyyy-MM-dd')\
+                          .alias('day'),
+                 'views'])
+        .groupby(['lang','page','day'])
+        .sum('views')
+        )
+
+    result_dir = str(date_parser('20071210-000000').date())
+    grouped_df.write.csv(result_dir,
+                         header=True,
+                         sep='\t')
+

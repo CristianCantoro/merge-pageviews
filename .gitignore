@@ -1,5 +1,11 @@
+# directories to ignore
 sorted_time/
 sorted_page/
-*.gz
+output/
+# jupyter checkpoints dir
 .ipynb_checkpoints/
+
+# file extensions
+*.gz
 *.log
+*.csv

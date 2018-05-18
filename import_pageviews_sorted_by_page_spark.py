@@ -30,17 +30,11 @@ initial_comment=\
 # Page titles are shown unmodified (preserves sort sequence)
 #"""
 
-import pandas as pd
+import os
+import csv
+import logging
 import argparse
 import datetime
-import tempfile
-import gzip
-import csv
-import os
-import logging
-import progressbar
-
-progressbar.streams.wrap_stderr()
 
 import findspark
 findspark.init()
@@ -48,6 +42,7 @@ findspark.init()
 import pyspark
 from pyspark.sql.types import StructType, StructField
 from pyspark.sql.types import StringType, IntegerType, TimestampType
+from pyspark.sql import functions
 
 ########## logging
 # create logger with 'spam_application'
@@ -75,7 +70,8 @@ def cli_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument("FILE",
-                        help="Input file.")
+                        help="Input file.",
+                        nargs='+')
     args = parser.parse_args()
 
     parser.add_argument("--encoding",
@@ -86,8 +82,6 @@ def cli_args():
 
     return args
 
-# The same thing more concise, and perhaps faster as it doesn't use a list: 
-# df = pd.concat((pd.read_csv(f) for f in all_files)) 
 
 if __name__ == "__main__":
     args = cli_args()
@@ -97,13 +91,38 @@ if __name__ == "__main__":
 
     schema = StructType([StructField("lang", StringType(), False),
                          StructField("page", StringType(), False),
+                         StructField("timestamp", TimestampType(), True),
                          StructField("views", IntegerType(), False),
-                         StructField("timestamp", TimestampType(), True)])
+                         StructField("reqbytes", IntegerType(), False),
+                         ])
 
-    input_file = args.FILE
+    input_files = args.FILE
     encoding = args.encoding
 
-    df = sqlctx.read.csv(input_file,
-                         header=True,
-                         mode="DROPMALFORMED",
-                         schema=schema)
+
+    for input_file in input_files:
+        input_basename = os.path.basename(input_file)
+        result_dir = os.path.splitext(input_basename)[0]
+
+        df = sqlctx.read.csv(input_file,
+                             header=False,
+                             schema=schema,
+                             timestampFormat='yyyyMMdd-hhmmss',
+                             sep=' ')
+
+        df = df.drop('reqbytes')
+
+        grouped_df = (df
+            .select(['lang',
+                     'page',
+                     functions.date_format('timestamp','yyyy-MM-dd')\
+                              .alias('day'),
+                     'views'])
+            .groupby(['lang','page','day'])
+            .sum('views')
+            )
+
+        grouped_df.write.csv(result_dir,
+                             header=True,
+                             sep='\t')
+
