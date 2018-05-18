@@ -92,15 +92,18 @@ def date_parser(timestamp):
 def cli_args():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("FILE",
-                        help="Input file.",
-                        nargs='+')
-    args = parser.parse_args()
+    parser.add_argument("date",
+                        metavar='<date>',
+                        help="Date to process.")
+
+    parser.add_argument("--data",
+                        help="Path where the datadir is located.")
 
     parser.add_argument("--encoding",
                         help="Encoding of input files.",
                         default='utf-8',
                         nargs='+')
+
     args = parser.parse_args()
 
     return args
