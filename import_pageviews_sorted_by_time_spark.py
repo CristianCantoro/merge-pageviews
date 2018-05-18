@@ -186,11 +186,13 @@ if __name__ == "__main__":
 
     logger.info('Union of all Spark DataFrames.')
     df = unionAll(*list_dfs)
-
     logger.info('Spark DataFrame created')
 
+    logger.info('Dropping column "reqbytes" from DataFrame')
     df = df.drop('reqbytes')
+    logger.info('Dropped column "reqbytes" from DataFrame')
 
+    logger.info('Aggregating total views by day.')
     grouped_df = (df
         .select(['lang',
                  'page',
@@ -200,8 +202,11 @@ if __name__ == "__main__":
         .groupby(['lang','page','day'])
         .sum('views')
         )
+    logger.info('Aggregated total views by day.')
 
+    logger.info('Writing results to disk ...')
     grouped_df.write.csv(os.path.join(outputdir, input_date_str),
                          header=True,
                          sep='\t')
 
+    logger.info('All done!')
