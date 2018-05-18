@@ -38,13 +38,13 @@ initial_comment=\
 # Page titles are shown unmodified (preserves sort sequence)
 #"""
 
-import pandas as pd
+import os
+import csv
+import gzip
+import glob
+import pathlib
 import argparse
 import datetime
-import tempfile
-import gzip
-import csv
-import os
 import logging
 import progressbar
 
@@ -90,19 +90,50 @@ def date_parser(timestamp):
 
 
 def cli_args():
+
+
+    def valid_date_type(arg_date_str):
+        """custom argparse *date* type for user dates values given from the
+           command line"""
+        try:
+            return datetime.datetime.strptime(arg_date_str, "%Y%m%d")
+        except ValueError:
+            msg = "Given Date ({0}) not valid! Expected format, YYYYMMDD!"\
+                  .format(arg_date_str)
+            raise argparse.ArgumentTypeError(msg)
+
     parser = argparse.ArgumentParser()
 
     parser.add_argument("date",
                         metavar='<date>',
+                        type=valid_date_type,
                         help="Date to process.")
 
-    parser.add_argument("--data",
-                        help="Path where the datadir is located.")
+    parser.add_argument("--datadir",
+                        type=pathlib.Path,
+                        default=os.getcwd(),
+                        help="ath where the pagecount files are located "
+                             "[default: '.'].")
+
+    parser.add_argument("--basename",
+                        default='pagecounts-',
+                        help="Path where the pagecount files are located "
+                             "[default: 'pagecounts-'].")
+
+    parser.add_argument("--outputdir",
+                        type=pathlib.Path,
+                        default=os.getcwd(),
+                        help="Where the directory with the elaborated data "
+                             "will be saved [default: '.'].")
+
+    parser.add_argument("--extension",
+                        default='.gz',
+                        help="Extension of the pagecount files"
+                             "[default: '.gz'].")
 
     parser.add_argument("--encoding",
-                        help="Encoding of input files.",
                         default='utf-8',
-                        nargs='+')
+                        help="Encoding of input files [default: utf-8].")
 
     args = parser.parse_args()
 
@@ -119,11 +150,22 @@ if __name__ == "__main__":
                          StructField("views", IntegerType(), False),
                          StructField("reqbytes", IntegerType(), False)])
 
-    input_files = args.FILE
+    input_date = args.date
+    input_date_str = input_date.date().strftime('%Y%m%d')
+
+    datadir = os.path.abspath(args.datadir)
+    outputdir = os.path.abspath(args.outputdir)
+    basename = args.basename
     encoding = args.encoding
+    extension = args.extension
+
+    fileglob = basename + input_date_str + '*' + extension
+    pathfile = os.path.join(datadir, fileglob)
+    logger.debug('pathfile: {}'.format(pathfile))
 
     list_dfs = list()
-    for input_file in input_files:
+    for input_file in glob.iglob(pathfile):
+        logger.debug('input_file: {}'.format(input_file))
 
         timestamp = date_parser(os.path.basename(input_file)
                                        .replace('pagecounts-','')
@@ -159,8 +201,7 @@ if __name__ == "__main__":
         .sum('views')
         )
 
-    result_dir = str(date_parser('20071210-000000').date())
-    grouped_df.write.csv(result_dir,
+    grouped_df.write.csv(os.path.join(outputdir, input_date_str),
                          header=True,
                          sep='\t')
 
