@@ -153,8 +153,8 @@ if __name__ == "__main__":
     input_date = args.date
     input_date_str = input_date.date().strftime('%Y%m%d')
 
-    datadir = os.path.abspath(args.datadir)
-    outputdir = os.path.abspath(args.outputdir)
+    datadir = os.path.abspath(str(args.datadir))
+    outputdir = os.path.abspath(str(args.outputdir))
     basename = args.basename
     encoding = args.encoding
     extension = args.extension
