@@ -1,7 +1,6 @@
 # directories to ignore
-sorted_time/
-sorted_page/
-output/
+data/
+
 # jupyter checkpoints dir
 .ipynb_checkpoints/
 
