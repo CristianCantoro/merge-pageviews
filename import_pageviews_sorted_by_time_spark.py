@@ -264,10 +264,11 @@ if __name__ == "__main__":
     cond = [daily.daily_lang == grouped_hours_df.lang,
             daily.daily_page == grouped_hours_df.page,
             daily.daily_day == grouped_hours_df.day]
-    final = daily.join(grouped_hours_df, cond)
-                 .select(['daily_lang', 'daily_page','daily_day',
-                          'daily_sum_views', 'enc'])
-                 .dropDuplicates()
+    final = (daily.join(grouped_hours_df, cond)
+                  .select(['daily_lang', 'daily_page','daily_day',
+                           'daily_sum_views', 'enc'])
+                  .dropDuplicates()
+                  )
 
     logger.info('Writing results to disk ...')
     final.write.csv(os.path.join(outputdir, input_date_str),
