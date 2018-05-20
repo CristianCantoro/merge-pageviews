@@ -1,16 +1,5 @@
 #!/usr/bin/env python3
 
-# CREATE TABLE pageviews (
-#     lang varchar(8),
-#     request test,
-#     timestamp timestamp,
-#     views integer CHECK (views>0),
-#     reqbytes integer CHECK (reqbytes>0)
-# );
-
-# How to copy from CSV file to PostgreSQL table with headers in CSV file?
-# https://stackoverflow.com/q/17662631/2377454
-
 initial_comment=\
 """# Wikimedia page request counts for 16/11/2011 (dd/mm/yyyy)
 #
