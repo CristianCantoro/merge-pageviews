@@ -47,8 +47,9 @@ import pyspark
 from pyspark.sql.types import StructType, StructField
 from pyspark.sql.types import StringType, IntegerType, TimestampType
 from pyspark.sql import functions
-from pyspark.sql.functions import lit
 from pyspark.sql.functions import pandas_udf, PandasUDFType
+from pyspark.sql.functions import lit
+from pyspark.sql.functions import col
 
 ########## logging
 # create logger with 'spam_application'
