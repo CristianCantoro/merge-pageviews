@@ -35,6 +35,7 @@ import pathlib
 import argparse
 import datetime
 import logging
+import pandas as pd
 
 import progressbar
 progressbar.streams.wrap_stderr()
@@ -47,6 +48,7 @@ from pyspark.sql.types import StructType, StructField
 from pyspark.sql.types import StringType, IntegerType, TimestampType
 from pyspark.sql import functions
 from pyspark.sql.functions import lit
+from pyspark.sql.functions import pandas_udf, PandasUDFType
 
 ########## logging
 # create logger with 'spam_application'
@@ -76,6 +78,39 @@ def unionAll(*dfs):
 
 def date_parser(timestamp):
     return datetime.datetime.strptime(timestamp, '%Y%m%d-%H%M%S')
+
+
+new_schema = StructType([StructField("lang", StringType(), False),
+                         StructField("page", StringType(), False),
+                         StructField("day", StringType(), False),
+                         StructField("enc", StringType(), False)])
+
+
+hour_to_letter = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O',
+              'P','Q','R','S','T','U','V','W','X']
+
+
+@pandas_udf(new_schema, PandasUDFType.GROUPED_MAP)
+def concat_hours(x):
+    view_hours = x['hour'].tolist()
+    view_views = x['views'].tolist()
+
+    view_hours_letters = [hour_to_letter[h] for h in view_hours]
+
+    encoded_views = [l + str(h) for l, h
+                     in sorted(zip(view_hours_letters,view_views))]
+    encoded_views_string = ''.join(encoded_views)
+
+    # return pd.DataFrame({'page': x.page,
+    #                      'lang': x.lang,
+    #                      'day': x.day,
+    #                      'enc': encoded_views_string
+    #                      }, index=[x.index[0]])
+    return pd.DataFrame({'enc': x.page,
+                         'day': x.lang,
+                         'lang': x.day,
+                         'page': encoded_views_string
+                         }, index=[x.index[0]])
 
 
 def cli_args():
@@ -196,19 +231,45 @@ if __name__ == "__main__":
     logger.info('Dropped column "reqbytes" from DataFrame')
 
     logger.info('Aggregating total views by day.')
-    grouped_df = (df
-        .select(['lang',
-                 'page',
-                 functions.date_format('timestamp','yyyy-MM-dd')\
-                          .alias('day'),
-                 'views'])
-        .groupby(['lang','page','day'])
-        .sum('views')
-        )
+    grouped_daily_df = (df.select(['lang',
+                                   'page',
+                                   functions.date_format('timestamp','yyyy-MM-dd')\
+                                            .alias('day'),
+                                   'views'])
+                          .groupby(['lang','page','day'])
+                          .sum('views')
+                          )
     logger.info('Aggregated total views by day.')
 
+    logger.info('Concatenating hourly views.')
+    grouped_hours_df = (df.select(['lang',
+                                   'page',
+                                   functions.date_format('timestamp','yyyy-MM-dd')
+                                            .alias('day'),
+                                   functions.hour('timestamp').alias('hour'),
+                                   'views'
+                                   ])
+                          .groupby(['lang','page','day'])
+                          .apply(concat_hours)
+                          .dropDuplicates()
+                          )
+    logger.info('Concatenated hourly views.')
+
+    daily = grouped_daily_df.select([col('lang').alias('daily_lang'),
+                                     col('page').alias('daily_page'),
+                                     col('day').alias('daily_day'),
+                                     col('sum(views)').alias('daily_sum_views'),
+                                     ])
+    cond = [daily.daily_lang == grouped_hours_df.lang,
+            daily.daily_page == grouped_hours_df.page,
+            daily.daily_day == grouped_hours_df.day]
+    final = daily.join(grouped_hours_df, cond)
+                 .select(['daily_lang', 'daily_page','daily_day',
+                          'daily_sum_views', 'enc'])
+                 .dropDuplicates()
+
     logger.info('Writing results to disk ...')
-    grouped_df.write.csv(os.path.join(outputdir, input_date_str),
+    final.write.csv(os.path.join(outputdir, input_date_str),
                          header=True,
                          sep='\t')
 
