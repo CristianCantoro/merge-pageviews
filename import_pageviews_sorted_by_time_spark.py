@@ -35,8 +35,8 @@ import pathlib
 import argparse
 import datetime
 import logging
-import progressbar
 
+import progressbar
 progressbar.streams.wrap_stderr()
 
 import findspark
@@ -152,30 +152,44 @@ if __name__ == "__main__":
     pathfile = os.path.join(datadir, fileglob)
     logger.debug('pathfile: {}'.format(pathfile))
 
+    input_files_count = len([f for f in glob.iglob(pathfile)])
+    logger.debug('input_files_count: {}'.format(input_files_count))
+
+    if input_files_count < 1:
+        logger.warn('No input files match: exiting')
+        exit(0)
+
     list_dfs = list()
-    for input_file in glob.iglob(pathfile):
-        logger.debug('input_file: {}'.format(input_file))
+    with progressbar.ProgressBar(max_value=input_files_count) as bar:
+        for input_file in glob.iglob(pathfile):
+            logger.debug('input_file: {}'.format(input_file))
 
-        timestamp = date_parser(os.path.basename(input_file)
-                                       .replace('pagecounts-','')
-                                       .replace('.gz',''))
+            timestamp = date_parser(os.path.basename(input_file)
+                                           .replace('pagecounts-','')
+                                           .replace('.gz',''))
 
-        logger.info('Processing file: {}'.format(input_file))
-        tmp_spark_df = sqlctx.read.csv(
-                            input_file,
-                            header=False,
-                            schema=schema,
-                            sep=' ')
+            logger.info('Processing file: {}'.format(input_file))
+            tmp_spark_df = sqlctx.read.csv(
+                                input_file,
+                                header=False,
+                                schema=schema,
+                                sep=' ')
 
-        tmp_spark_df = tmp_spark_df.withColumn("timestamp", lit(timestamp))
-        list_dfs.append(tmp_spark_df)
-        del tmp_spark_df
+            tmp_spark_df = tmp_spark_df.withColumn("timestamp", lit(timestamp))
+            list_dfs.append(tmp_spark_df)
+            del tmp_spark_df
 
-        logger.info('Added DataFrame for file {} to list'.format(input_file))
+            logger.info('Added DataFrame for file {} to list'.format(input_file))
+            bar.update(len(list_dfs))
 
-    logger.info('Union of all Spark DataFrames.')
-    df = unionAll(*list_dfs)
-    logger.info('Spark DataFrame created')
+    assert len(list_dfs) >= 1, 'There should be at least one DataFrame'
+
+    if len(list_dfs) > 1:
+        logger.info('Union of all Spark DataFrames.')
+        df = unionAll(*list_dfs)
+        logger.info('Spark DataFrame created')
+    else:
+        df = list_dfs[0]
 
     logger.info('Dropping column "reqbytes" from DataFrame')
     df = df.drop('reqbytes')
