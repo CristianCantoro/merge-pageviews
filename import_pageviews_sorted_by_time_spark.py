@@ -102,8 +102,13 @@ def concat_hours(x):
                      in sorted(zip(view_hours_letters,view_views))]
     encoded_views_string = ''.join(encoded_views)
 
-    # return pd.DataFrame({'page': x.page,
-    #                      'lang': x.lang,
+
+    # See this bug report:
+    # "UserDefinedFunction mixes column labels"
+    # https://issues.apache.org/jira/browse/SPARK-24324
+    #
+    # return pd.DataFrame({'lang': x.lang,
+    #                      'page': x.page,
     #                      'day': x.day,
     #                      'enc': encoded_views_string
     #                      }, index=[x.index[0]])
