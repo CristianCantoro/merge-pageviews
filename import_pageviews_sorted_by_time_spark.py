@@ -294,7 +294,13 @@ if __name__ == "__main__":
                                    'views'])
                           .groupby(['lang','page','day'])
                           .sum('views')
+                          .dropDuplicates()
                           )
+    grouped_daily_df = grouped_daily_df.select([col('lang').alias('lang_d'),
+                                            col('page').alias('page_d'),
+                                            col('day').alias('day_d'),
+                                            col('sum(views)').alias('daily_views'),
+                                            ])
     logger.info('Aggregated total views by day.')
 
     logger.info('Concatenating hourly views.')
@@ -311,19 +317,13 @@ if __name__ == "__main__":
                           )
     logger.info('Concatenated hourly views.')
 
-    daily = grouped_daily_df.select([col('lang').alias('daily_lang'),
-                                     col('page').alias('daily_page'),
-                                     col('day').alias('daily_day'),
-                                     col('sum(views)').alias('daily_sum_views'),
-                                     ])
-    cond = [daily.daily_lang == grouped_hours_df.lang,
-            daily.daily_page == grouped_hours_df.page,
-            daily.daily_day == grouped_hours_df.day]
-    final = (daily.join(grouped_hours_df, cond)
-                  .select(['daily_lang', 'daily_page','daily_day',
-                           'daily_sum_views', 'enc'])
-                  .dropDuplicates()
-                  )
+    cond = [grouped_daily_df.lang_d == grouped_hours_df.lang,
+            grouped_daily_df.page_d == grouped_hours_df.page,
+            grouped_daily_df.day_d == grouped_hours_df.day]
+    final = (grouped_daily_df.join(grouped_hours_df, cond)
+                             .select('lang_d', 'page_d', 'day_d', 'daily_views', 'enc')
+                             .dropDuplicates()
+                             )
 
     logger.info('Writing results to disk ...')
     final.write.csv(os.path.join(outputdir, input_date_str),
