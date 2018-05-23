@@ -7,32 +7,65 @@ to get [pagecounts-ez](https://dumps.wikimedia.org/other/pagecounts-ez/).
 
 ## Usage
 
-```bash
-usage: import_pageviews_sorted_by_time_spark.py [-h] [--datadir DATADIR]
-                                                [--basename BASENAME]
-                                                [--outputdir OUTPUTDIR]
-                                                [--extension EXTENSION]
+```
+usage: import_pageviews_sorted_by_time_spark.py [-h] [--outputdir OUTPUTDIR]
                                                 [--encoding ENCODING]
-                                                <date>
+                                                {day,list} ...
+
+Merge Wikipedia's pagecounts-raw to get pagecounts-ez.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --outputdir OUTPUTDIR
+                        Where the directory with the elaborated data will be
+                        saved [default: '.'].
+  --encoding ENCODING   Encoding of input files [default: 'utf-8'].
+
+subcommands:
+  valid subcommands
+
+  {day,list}            additional help
+```
+
+### `day` subcommand
+
+```
+usage: import_pageviews_sorted_by_time_spark.py day [-h] [--datadir DATADIR]
+                                                    [--basename BASENAME]
+                                                    [--extension EXTENSION]
+                                                    <date>
 
 positional arguments:
   <date>                Date to process.
 
 optional arguments:
   -h, --help            show this help message and exit
-  --datadir DATADIR     ath where the pagecount files are located [default:
+  --datadir DATADIR     Path where the pagecount files are located [default:
                         '.'].
   --basename BASENAME   Path where the pagecount files are located [default:
                         'pagecounts-'].
-  --outputdir OUTPUTDIR
-                        Where the directory with the elaborated data will be
-                        saved [default: '.'].
   --extension EXTENSION
                         Extension of the pagecount files[default: '.gz'].
-  --encoding ENCODING   Encoding of input files [default: utf-8].
 ```
 
-### Example
+### `list` subcommand
+
+```
+usage: import_pageviews_sorted_by_time_spark.py list [-h]
+                                                     [--resultdir RESULTDIR]
+                                                     <file> [<file> ...]
+
+positional arguments:
+  <file>                List of files to process.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --resultdir RESULTDIR
+                        Name of the directory containing the results [default:
+                        longest common substring of the input file].
+```
+
+#### Example
 
 To merge the data for a single day, assuming that:
 * you have downloaded the pagecounts files `pagecounts-20071210-*.gz` to your

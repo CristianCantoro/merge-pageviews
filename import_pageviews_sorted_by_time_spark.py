@@ -1,29 +1,22 @@
 #!/usr/bin/env python3
 """
-usage: import_pageviews_sorted_by_time_spark.py [-h] [--datadir DATADIR]
-                                                [--basename BASENAME]
-                                                [--outputdir OUTPUTDIR]
-                                                [--extension EXTENSION]
+usage: import_pageviews_sorted_by_time_spark.py [-h] [--outputdir OUTPUTDIR]
                                                 [--encoding ENCODING]
-                                                <date>
+                                                {day,list} ...
 
 Merge Wikipedia's pagecounts-raw to get pagecounts-ez.
 
-positional arguments:
-  <date>                Date to process.
-
 optional arguments:
   -h, --help            show this help message and exit
-  --datadir DATADIR     ath where the pagecount files are located [default:
-                        '.'].
-  --basename BASENAME   Path where the pagecount files are located [default:
-                        'pagecounts-'].
   --outputdir OUTPUTDIR
                         Where the directory with the elaborated data will be
                         saved [default: '.'].
-  --extension EXTENSION
-                        Extension of the pagecount files[default: '.gz'].
   --encoding ENCODING   Encoding of input files [default: 'utf-8'].
+
+subcommands:
+  valid subcommands
+
+  {day,list}            additional help
 ---
 
 merge-pageviews: Merge Wikipedia's pagecounts-raw to get pagecounts-ez.
@@ -169,7 +162,6 @@ def concat_hours(x):
 
 def cli_args():
 
-
     def valid_date_type(arg_date_str):
         """custom argparse *date* type for user dates values given from the
            command line"""
@@ -184,21 +176,47 @@ def cli_args():
     parser = argparse.ArgumentParser(
         description="Merge Wikipedia's pagecounts-raw to get pagecounts-ez.")
 
-    parser.add_argument("date",
-                        metavar='<date>',
-                        type=valid_date_type,
-                        help="Date to process.")
+    subparsers = parser.add_subparsers(title='subcommands',
+                                       description='valid subcommands',
+                                       help='additional help')
+    subparsers.required = True
+    subparsers.dest = 'subcommand'
 
-    parser.add_argument("--datadir",
-                        type=pathlib.Path,
-                        default=os.getcwd(),
-                        help="ath where the pagecount files are located "
-                             "[default: '.'].")
+    # create the parser for the "foo" command
+    parser_day = subparsers.add_parser('day')
 
-    parser.add_argument("--basename",
-                        default='pagecounts-',
-                        help="Path where the pagecount files are located "
-                             "[default: 'pagecounts-'].")
+    parser_day.add_argument("date",
+                            metavar='<date>',
+                            type=valid_date_type,
+                            help="Date to process.")
+
+    parser_day.add_argument("--datadir",
+                            type=pathlib.Path,
+                            default=os.getcwd(),
+                            help="Path where the pagecount files are located "
+                                 "[default: '.'].")
+
+    parser_day.add_argument("--basename",
+                            default='pagecounts-',
+                            help="Path where the pagecount files are located "
+                                 "[default: 'pagecounts-'].")
+
+    parser_day.add_argument("--extension",
+                            default='.gz',
+                            help="Extension of the pagecount files"
+                                 "[default: '.gz'].")
+
+    # create the parser for the "bar" command
+    parser_list = subparsers.add_parser('list')
+    parser_list.add_argument('input_files',
+                             metavar='<file>',
+                             nargs='+',
+                             help="List of files to process.")
+
+    parser_list.add_argument('--resultdir',
+                             help="Name of the directory containing the "
+                                  "results [default: longest common substring "
+                                  "of the input file].")
 
     parser.add_argument("--outputdir",
                         type=pathlib.Path,
@@ -206,10 +224,6 @@ def cli_args():
                         help="Where the directory with the elaborated data "
                              "will be saved [default: '.'].")
 
-    parser.add_argument("--extension",
-                        default='.gz',
-                        help="Extension of the pagecount files"
-                             "[default: '.gz'].")
 
     parser.add_argument("--encoding",
                         default='utf-8',
@@ -230,25 +244,48 @@ if __name__ == "__main__":
                          StructField("views", IntegerType(), False),
                          StructField("reqbytes", IntegerType(), False)])
 
-    input_date = args.date
-    input_date_str = input_date.date().strftime('%Y%m%d')
-
-    datadir = os.path.abspath(str(args.datadir))
     outputdir = os.path.abspath(str(args.outputdir))
-    basename = args.basename
     encoding = args.encoding
-    extension = args.extension
 
-    fileglob = basename + input_date_str + '*' + extension
-    pathfile = os.path.join(datadir, fileglob)
-    logger.debug('pathfile: {}'.format(pathfile))
+    if args.subcommand == 'day':
+        input_date = args.date
+        input_date_str = input_date.date().strftime('%Y%m%d')
 
-    input_files_count = len([f for f in glob.iglob(pathfile)])
-    logger.debug('input_files_count: {}'.format(input_files_count))
+        datadir = os.path.abspath(str(args.datadir))
+        basename = args.basename
+        extension = args.extension
+
+        fileglob = basename + input_date_str + '*' + extension
+        pathfile = os.path.join(datadir, fileglob)
+        logger.debug('pathfile: {}'.format(pathfile))
+
+        input_files_count = len([f for f in glob.iglob(pathfile)])
+        logger.debug('input_files_count: {}'.format(input_files_count))
+
+        result_dirname = input_date_str
+
+    else:
+
+      import re
+      def long_substr(data):
+            substr = ''
+            if len(data) > 1 and len(data[0]) > 0:
+                for i in range(len(data[0])):
+                    for j in range(len(data[0])-i+1):
+                        if j > len(substr) and \
+                                all(data[0][i:i+j] in x for x in data):
+                            substr = data[0][i:i+j]
+            return substr
+
+      input_files = args.input_files
+      input_files_count = len(input_files)
+
+      basenames = [os.path.basename(inp) for inp in input_files]
+      result_dirname = re.sub("[^\\w]$", "", long_substr(basenames))
 
     if input_files_count < 1:
         logger.warn('No input files match: exiting')
-        exit(0)
+        exit(1)
 
     list_dfs = list()
     with progressbar.ProgressBar(max_value=input_files_count) as bar:
@@ -326,7 +363,7 @@ if __name__ == "__main__":
                              )
 
     logger.info('Writing results to disk ...')
-    final.write.csv(os.path.join(outputdir, input_date_str),
+    final.write.csv(os.path.join(outputdir, result_dirname),
                          header=True,
                          sep='\t')
 
