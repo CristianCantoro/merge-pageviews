@@ -259,8 +259,7 @@ if __name__ == "__main__":
         pathfile = os.path.join(datadir, fileglob)
         logger.debug('pathfile: {}'.format(pathfile))
 
-        input_files_count = len([f for f in glob.iglob(pathfile)])
-        logger.debug('input_files_count: {}'.format(input_files_count))
+        input_files = len([f for f in glob.iglob(pathfile)])
 
         result_dirname = input_date_str
 
@@ -277,19 +276,23 @@ if __name__ == "__main__":
                             substr = data[0][i:i+j]
             return substr
 
+
       input_files = args.input_files
-      input_files_count = len(input_files)
 
       basenames = [os.path.basename(inp) for inp in input_files]
       result_dirname = re.sub("[^\\w]$", "", long_substr(basenames))
 
+    logger.debug('result_dirname: {}'.format(result_dirname))
+
+    input_files_count = len(input_files)
+    logger.debug('input_files_count: {}'.format(input_files_count))
     if input_files_count < 1:
         logger.warn('No input files match: exiting')
         exit(1)
 
     list_dfs = list()
     with progressbar.ProgressBar(max_value=input_files_count) as bar:
-        for input_file in glob.iglob(pathfile):
+        for input_file in input_files:
             logger.debug('input_file: {}'.format(input_file))
 
             timestamp = date_parser(os.path.basename(input_file)
