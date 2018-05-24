@@ -109,7 +109,9 @@ ch.setFormatter(formatter)
 logger.addHandler(ch)
 ##########
 
-
+# taken from
+# Spark union of multiple RDDs
+# https://stackoverflow.com/a/33744540/2377454
 def unionAll(*dfs):
     first, *_ = dfs  # Python 3.x, for 2.x you'll have to unpack manually
     return first.sql_ctx.createDataFrame(
