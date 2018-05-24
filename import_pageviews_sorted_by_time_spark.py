@@ -234,7 +234,7 @@ if __name__ == "__main__":
         logger.debug('pathfile: {}'.format(pathfile))
 
         input_files = [f for f in glob.iglob(pathfile)]
-        input_files = len(input_files)
+        input_files_count = len(input_files)
 
         result_dirname = input_date_str
 
