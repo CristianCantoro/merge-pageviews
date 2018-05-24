@@ -40,34 +40,6 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 See the LICENSE file in this repository for further details.
 """
-
-initial_comment=\
-"""# Wikimedia page request counts for 16/11/2011 (dd/mm/yyyy)
-#
-# Each line shows 'project page daily-total hourly-counts'
-#
-# Project is 'language-code project-code'
-#
-# Project-code is
-#
-# b:wikibooks,
-# k:wiktionary,
-# n:wikinews,
-# q:wikiquote,
-# s:wikisource,
-# v:wikiversity,
-# wo:wikivoyage,
-# z:wikipedia (z added by merge script: wikipedia happens to be sorted last in dammit.lt files, but without suffix)
-#
-# Counts format: only hours with page view count > 0 (or data missing) are represented,
-#
-# Hour 0..23 shown as A..X (saves up to 22 bytes per line compared to comma separated values), followed by view count.
-# If data are missing for some hour (file missing or corrupt) a question mark (?) is shown,
-# and a adjusted daily total is extrapolated as follows: for each missing hour the total is incremented with hourly average
-#
-# Page titles are shown unmodified (preserves sort sequence)
-#"""
-
 import os
 import csv
 import gzip
