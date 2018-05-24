@@ -131,7 +131,7 @@ new_schema = StructType([StructField("lang", StringType(), False),
 
 
 hour_to_letter = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O',
-              'P','Q','R','S','T','U','V','W','X']
+                  'P','Q','R','S','T','U','V','W','X']
 
 
 @pandas_udf(new_schema, PandasUDFType.GROUPED_MAP)
