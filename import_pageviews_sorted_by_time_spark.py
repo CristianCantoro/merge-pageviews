@@ -339,13 +339,13 @@ if __name__ == "__main__":
             grouped_daily_df.page_d == grouped_hours_df.page,
             grouped_daily_df.day_d == grouped_hours_df.day]
     final = (grouped_daily_df.join(grouped_hours_df, cond)
-                             .select('lang_d', 'page_d', 'day_d', 'daily_views', 'enc')
+                             .select('lang_d', 'page_d', 'daily_views', 'enc')
                              .dropDuplicates()
                              )
 
     logger.info('Writing results to disk ...')
     final.write.csv(os.path.join(outputdir, result_dirname),
-                         header=True,
-                         sep='\t')
+                    header=False,
+                    sep=' ')
 
     logger.info('All done!')
