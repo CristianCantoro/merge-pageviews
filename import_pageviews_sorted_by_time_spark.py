@@ -266,9 +266,8 @@ if __name__ == "__main__":
         result_dirname = input_date_str
 
     else:
-
-      import re
-      def long_substr(data):
+        import re
+        def long_substr(data):
             substr = ''
             if len(data) > 1 and len(data[0]) > 0:
                 for i in range(len(data[0])):
@@ -278,11 +277,14 @@ if __name__ == "__main__":
                             substr = data[0][i:i+j]
             return substr
 
+        input_files = args.input_files
 
-      input_files = args.input_files
+        if args.resultdir is None:
+            basenames = [os.path.basename(inp) for inp in input_files]
+            result_dirname = re.sub("[^\\w]$", "", long_substr(basenames))
+        else:
+            result_dirname = args.resultdir
 
-      basenames = [os.path.basename(inp) for inp in input_files]
-      result_dirname = re.sub("[^\\w]$", "", long_substr(basenames))
 
     logger.debug('result_dirname: {}'.format(result_dirname))
 
