@@ -312,11 +312,13 @@ if __name__ == "__main__":
                           .sum('views')
                           .dropDuplicates()
                           )
-    grouped_daily_df = grouped_daily_df.select([col('lang').alias('lang_d'),
-                                            col('page').alias('page_d'),
-                                            col('day').alias('day_d'),
-                                            col('sum(views)').alias('daily_views'),
-                                            ])
+    grouped_daily_df = (grouped_daily_df
+                        .select([col('lang').alias('lang_d'),
+                                 col('page').alias('page_d'),
+                                 col('day').alias('day_d'),
+                                 col('sum(views)').alias('daily_views'),
+                                 ])
+                        )
     logger.info('Aggregated total views by day.')
 
     logger.info('Concatenating hourly views.')
