@@ -157,7 +157,7 @@ def cli_args():
     parser_day.add_argument("date",
                             metavar='<date>',
                             type=valid_date_type,
-                            help="Date to process.")
+                            help="Date to process (format: YYYYMMDD).")
 
     parser_day.add_argument("--datadir",
                             type=pathlib.Path,
