@@ -260,14 +260,17 @@ if __name__ == "__main__":
                 barread.update(count_processed_input)
 
         logger.debug('count_total_lines: {}'.format(count_total_lines))
-        logger.info('Writing data to uncompressed_file')
         count_written_lines = 0
+
+        logger.info('Sorting data')
+        sorted_data = sorted(uncompressed_data)
+
+        logger.info('Writing data to uncompressed_file')
         with progressbar.ProgressBar(max_value=count_total_lines) as barwrite:
             barwrite.update(0)
 
-            for line in sorted(uncompressed_data):
+            for line in sorted_data:
                 uncompressed_writer.writerow(line)
-                uncompressed_file.flush()
 
                 count_written_lines += 1
                 barwrite.update(count_written_lines)
@@ -275,6 +278,9 @@ if __name__ == "__main__":
 
         uncompressed_file.flush()
         uncompressed_file.seek(0)
+
+        logger.info('Delete temporary variables')
+        del sorted_data
         del uncompressed_data
 
         count_processed_lines = 0
