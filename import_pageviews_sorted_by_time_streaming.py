@@ -25,6 +25,7 @@ See the LICENSE file in this repository for further details.
 """
 
 import os
+import re
 import csv
 import gzip
 import glob
@@ -32,7 +33,7 @@ import logging
 import pathlib
 import argparse
 import tempfile
-from datetime import datetime
+import datetime
 
 import progressbar
 progressbar.streams.wrap_stderr()
@@ -58,6 +59,12 @@ logger.addHandler(ch)
 
 def concat_hours(hours_data):
     return 'foo'
+
+
+date_pattern = r'[0-9]{8}-[0-9]{6}'
+regex_date = re.compile(date_pattern)
+def date_parser(timestamp):
+    return datetime.datetime.strptime(timestamp, '%Y%m%d-%H%M%S')
 
 
 def cli_args():
@@ -88,7 +95,7 @@ def cli_args():
     parser_day.add_argument("date",
                             metavar='<date>',
                             type=valid_date_type,
-                            help="Date to process.")
+                            help="Date to process (format: YYYYMMDD).")
 
     parser_day.add_argument("--datadir",
                             type=pathlib.Path,
@@ -113,9 +120,9 @@ def cli_args():
                              nargs='+',
                              help="List of files to process.")
 
-    parser_list.add_argument('--resultdir',
-                             help="Name of the directory containing the "
-                                  "results [default: longest common substring "
+    parser_list.add_argument('--output',
+                             help="Name of output file "
+                                  "[default: longest common substring "
                                   "of the input file].")
 
     parser.add_argument("--outputdir",
@@ -155,7 +162,7 @@ if __name__ == "__main__":
         input_files = [f for f in glob.iglob(pathfile)]
         input_files_count = len(input_files)
 
-        result_dirname = input_date_str
+        output_name = '{}.csv'.format(input_date_str)
 
     else:
         import re
@@ -171,14 +178,14 @@ if __name__ == "__main__":
 
         input_files = args.input_files
 
-        if args.resultdir is None:
+        if args.output is None:
             basenames = [os.path.basename(inp) for inp in input_files]
-            result_dirname = re.sub("[^\\w]$", "", long_substr(basenames))
+            output_name = re.sub("[^\\w]$", "", long_substr(basenames))
         else:
-            result_dirname = args.resultdir
+            output_name = args.output
 
 
-    logger.debug('result_dirname: {}'.format(result_dirname))
+    logger.debug('output_name: {}'.format(output_name))
 
     input_files_count = len(input_files)
     logger.debug('input_files_count: {}'.format(input_files_count))
@@ -186,27 +193,93 @@ if __name__ == "__main__":
         logger.warn('No input files match: exiting')
         exit(1)
 
+    # for input_file in input_files:
+    #     print(input_file)
+    # exit(0)
+
+    output_path = os.path.join(outputdir, output_name)
+    output_file = open(output_path, 'w+')
+    output_writer = csv.writer(output_file, delimiter=' ')
+
     count_processed_input = 0
-    with progressbar.ProgressBar(max_value=input_files_count) as bar:
-        for input_file in input_files:
+    count_total_lines = 0
+    uncompressed_data = []
+    with tempfile.NamedTemporaryFile(mode='w+', encoding=encoding) \
+            as uncompressed_file:
 
-            filename, file_extension = os.path.splitext(
-                                            os.path.basename(input_file)
-                                            )
+        logger.debug('uncompressed_file: {}'.format(uncompressed_file.name))
+        uncompressed_writer = csv.writer(uncompressed_file, delimiter=' ')
 
-            output_file = os.path.join(outputdir,
-                                       '{}.output.csv'.format(filename))
-            logger.debug('output_file: {}'.format(output_file))
+        with progressbar.ProgressBar(max_value=input_files_count) as barread:
+            barread.update(0)
+            for input_file in input_files:
+                input_basename = os.path.basename(input_file)
+                logger.debug('basename: {}'.format(input_basename))
 
-            outcsv = open(output_file, 'w+') 
-            writer = csv.writer(outcsv, delimiter=' ')
+                filename, file_ext = os.path.splitext(input_basename)
 
-            with gzip.open(input_file,
-                           "rt",
-                           encoding='utf-8',
-                           errors='replace') as infile:
-                reader = csv.reader(infile, delimiter=' ')             
-                input_file_numlines = len([line for line in reader])
+                timestamp = date_parser(
+                                regex_date.search(input_basename).group()
+                                )
+                timestamp_str = timestamp.strftime("%Y%m%d-%H%M%S")
+                logger.debug('timestamp: {}'.format(timestamp_str))
+
+                with gzip.open(input_file,
+                               "rt",
+                               encoding='utf-8',
+                               errors='replace') as infile:
+                    compressed_reader = csv.reader(infile, delimiter=' ')
+
+                    while True:
+                        try:
+                            line = next(compressed_reader)
+                        except StopIteration:
+                            break
+                        except:
+                            logger.warn('Error - Corrupted line: {}'
+                                        .format(line))
+                            continue
+
+                        try:
+                            lang = line[0]
+                            page = line[1]
+                            views = int(line[2])
+                        except Exception as e:
+                            logger.warn('Error - Corrupted line: {}'
+                                    .format(e))
+                            continue
+
+                        count_total_lines += 1
+                        uncompressed_data.append([lang,
+                                                  page,
+                                                  timestamp_str,
+                                                  views
+                                                  ])
+
+                count_processed_input += 1
+                barread.update(count_processed_input)
+
+        logger.debug('count_total_lines: {}'.format(count_total_lines))
+        logger.info('Writing data to uncompressed_file')
+        count_written_lines = 0
+        with progressbar.ProgressBar(max_value=count_total_lines) as barwrite:
+            barwrite.update(0)
+
+            for line in sorted(uncompressed_data):
+                uncompressed_writer.writerow(line)
+                uncompressed_file.flush()
+
+                count_written_lines += 1
+                barwrite.update(count_written_lines)
+        logger.info('Data written to uncompressed_file')
+
+        uncompressed_file.flush()
+        uncompressed_file.seek(0)
+        del uncompressed_data
+
+        count_processed_lines = 0
+        with progressbar.ProgressBar(max_value=count_total_lines) as barproc:
+            barproc.update(0)
 
             old_lang = None
             old_page = None
@@ -215,71 +288,54 @@ if __name__ == "__main__":
             daily_data = []
             hours_data = {}
             count_lines = 0
-            # with progressbar.ProgressBar(max_value=input_file_numlines) \
-            #         as bar_file:
-            with gzip.open(input_file,
-                           "rt",
-                           encoding='utf-8',
-                           errors='replace') as infile:
-                reader = csv.reader(infile, delimiter=' ')             
 
-                count_lines += 1
-                while True:
-                    try:
-                        line = next(reader)
-                    except StopIteration:
-                        break
-                    except:
-                        continue
+            uncompressed_reader = csv.reader(uncompressed_file,
+                                             delimiter=' ')
 
-                    # print(line)
+            for line in uncompressed_reader:
+                lang = line[0]
+                page = line[1]
 
-                    try:
-                        lang = line[0]
-                        page = line[1]
-                        timestamp = datetime.strptime(line[2],
-                                                      '%Y%m%d-%H%M%S')
-                        views = int(line[3])
-                    except:
-                        continue
+                timestamp = datetime.datetime.strptime(line[2],
+                                                       '%Y%m%d-%H%M%S')
+                day = timestamp.day
 
-                    day = timestamp.day
+                views = int(line[3])
 
-                    if (old_lang is None or old_lang == lang) and \
-                            (old_page is None or old_page == page) and \
-                            (old_day is None or old_day == day):
-                        # logger.debug('Save data.')
-                        daily_data.append(views)
-                        hours_data[timestamp] = views
+                if (old_lang is None or old_lang == lang) and \
+                        (old_page is None or old_page == page) and \
+                        (old_day is None or old_day == day):
+                    # logger.debug('Save data.')
+                    daily_data.append(views)
+                    hours_data[timestamp] = views
 
-                    else:
-                        # logger.debug('Change data.')
-                        if daily_data and hours_data:
+                else:
+                    # logger.debug('Change data.')
+                    if daily_data and hours_data:
 
-                            total_daily_views = sum(daily_data)                
-                            enc_hours_views = concat_hours(hours_data)
+                        total_daily_views = sum(daily_data)
+                        enc_hours_views = concat_hours(hours_data)
 
-                            # import ipdb; ipdb.set_trace()
-                            writer.writerow((old_lang,
-                                             old_page,
-                                             str(old_timestamp.date()),
-                                             total_daily_views,
-                                             enc_hours_views
-                                             ))
+                        # import ipdb; ipdb.set_trace()
+                        output_writer.writerow((old_lang,
+                                                old_page,
+                                                total_daily_views,
+                                                enc_hours_views
+                                                ))
 
-                        daily_data = []
-                        hours_data = {}
+                    daily_data = []
+                    hours_data = {}
 
-                        daily_data.append(views)
-                        hours_data[timestamp] = views
+                    daily_data.append(views)
+                    hours_data[timestamp] = views
 
+                old_lang = lang
+                old_page = page
+                old_timestamp = timestamp
+                old_day = day
 
-                    old_lang = lang
-                    old_page = page
-                    old_timestamp = timestamp
-                    old_day = day
+                count_processed_lines += 1
+                barproc.update(count_processed_lines)
 
-
-            count_processed_input += 1
-            bar.update(count_processed_input)
-
+logger.debug('All done!')
+exit(0)
