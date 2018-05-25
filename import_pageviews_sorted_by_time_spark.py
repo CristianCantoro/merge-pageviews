@@ -64,6 +64,8 @@ from pyspark.sql.functions import pandas_udf, PandasUDFType
 from pyspark.sql.functions import lit
 from pyspark.sql.functions import col
 
+from collections import OrderedDict
+
 ########## logging
 # create logger with 'spam_application'
 logger = logging.getLogger(__file__)
@@ -121,17 +123,10 @@ def concat_hours(x):
     # See this bug report:
     # "UserDefinedFunction mixes column labels"
     # https://issues.apache.org/jira/browse/SPARK-24324
-    #
-    # return pd.DataFrame({'lang': x.lang,
-    #                      'page': x.page,
-    #                      'day': x.day,
-    #                      'enc': encoded_views_string
-    #                      }, index=[x.index[0]])
-    return pd.DataFrame({'enc': x.page,
-                         'day': x.lang,
-                         'lang': x.day,
-                         'page': encoded_views_string
-                         }, index=[x.index[0]])
+    return pd.DataFrame(OrderedDict([('lang', x.lang),
+                                     ('page', x.page),
+                                     ('day', x.day),
+                                     ('enc', encoded_views_string)]))
 
 
 def cli_args():
