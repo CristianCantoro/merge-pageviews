@@ -57,8 +57,23 @@ logger.addHandler(ch)
 ##########
 
 
+hour_to_letter = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O',
+                  'P','Q','R','S','T','U','V','W','X']
+
+
 def concat_hours(hours_data):
-    return 'foo'
+
+    view_hours_letters = list()
+    view_views = list()
+    for timestamp, views in hours_data.items():
+        view_hours_letters.append(hour_to_letter[timestamp.hour])
+        view_views.append(views)
+
+    encoded_views = [l + str(h) for l, h
+                     in sorted(zip(view_hours_letters,view_views))]
+    encoded_views_string = ''.join(encoded_views)
+
+    return encoded_views_string
 
 
 date_pattern = r'[0-9]{8}-[0-9]{6}'
@@ -322,7 +337,6 @@ if __name__ == "__main__":
                         total_daily_views = sum(daily_data)
                         enc_hours_views = concat_hours(hours_data)
 
-                        # import ipdb; ipdb.set_trace()
                         output_writer.writerow((old_lang,
                                                 old_page,
                                                 total_daily_views,
