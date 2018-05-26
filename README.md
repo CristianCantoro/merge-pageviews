@@ -7,7 +7,7 @@ to get [pagecounts-ez](https://dumps.wikimedia.org/other/pagecounts-ez/).
 
 There are two sets of scripts:
 * Scripts using Apache Spark: `process_pageviews_streaming.sh`, and
-  `merge_pageviews_sorted_by_time_streamin.py` , see [docs/streaming.md](./docs/streaming.md) 
+  `merge_pageviews_sorted_by_time_streaming.py` , see [docs/streaming.md](./docs/streaming.md) 
 * Scripts using Apache Spark: `process_pageviews_spark.sh` , and
   `merge_pageviews_sorted_by_time_spark.py` see [docs/spark.md](./docs/spark.md)
 

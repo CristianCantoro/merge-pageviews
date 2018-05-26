@@ -76,8 +76,7 @@ To merge the data for a single day, assuming that:
 
 you can launch the script like this:
 ```bash
-./import_pageviews_sorted_by_time_spark.py \
-    --datadir data/input/sorted_time/2007-12/ \
-    --outputdir output \
-    20071210
+./import_pageviews_sorted_by_time_streaming.py \
+  --outputdir data/output/streaming/ \
+    day --datadir ./data/input/sorted_time/2007-12/ 20071212
 ```
