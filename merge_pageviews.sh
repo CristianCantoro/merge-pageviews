@@ -23,6 +23,13 @@
 # See the LICENSE file in this repository for further details.
 # ---
 
+# shellcheck disable=SC2128
+SOURCED=false && [ "$0" = "$BASH_SOURCE" ] || SOURCED=true
+if ! $SOURCED; then
+  set -euo pipefail
+  IFS=$'\n\t'
+fi
+
 read -r -d '' initial_comment <<EOF
 # Wikimedia page request counts for 16/11/2011 (dd/mm/yyyy)
 #
