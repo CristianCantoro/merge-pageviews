@@ -120,7 +120,7 @@ def cli_args():
            command line"""
         for fmt in ('%Y-%m-%d', '%Y%m%d'):
             try:
-                return datetime.strptime(arg_date_str, fmt)
+                return datetime.datetime.strptime(arg_date_str, fmt)
             except ValueError:
                 pass
 
