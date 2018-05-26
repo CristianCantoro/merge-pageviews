@@ -134,16 +134,31 @@ def cli_args():
     def valid_date_type(arg_date_str):
         """custom argparse *date* type for user dates values given from the
            command line"""
-        try:
-            return datetime.datetime.strptime(arg_date_str, "%Y%m%d")
-        except ValueError:
-            msg = "Given Date ({0}) not valid! Expected format, YYYYMMDD!"\
-                  .format(arg_date_str)
-            raise argparse.ArgumentTypeError(msg)
+        for fmt in ('%Y-%m-%d', '%Y%m%d'):
+            try:
+                return datetime.strptime(arg_date_str, fmt)
+            except ValueError:
+                pass
+
+        msg = "Given date ({0}) not valid! Expected formats: "
+              "YYYY-MM-DD, YYYYMMDD"\
+              .format(arg_date_str)
+        raise argparse.ArgumentTypeError(msg)
 
 
     parser = argparse.ArgumentParser(
         description="Merge Wikipedia's pagecounts-raw to get pagecounts-ez.")
+
+    parser.add_argument("--outputdir",
+                        type=pathlib.Path,
+                        default=os.getcwd(),
+                        help="Where the directory with the elaborated data "
+                             "will be saved [default: '.'].")
+
+
+    parser.add_argument("--encoding",
+                        default='utf-8',
+                        help="Encoding of input files [default: 'utf-8'].")
 
     subparsers = parser.add_subparsers(title='subcommands',
                                        description='valid subcommands',
@@ -157,7 +172,8 @@ def cli_args():
     parser_day.add_argument("date",
                             metavar='<date>',
                             type=valid_date_type,
-                            help="Date to process (format: YYYYMMDD).")
+                            help="Date to process (avalilable formats: "
+                                 "YYYYMMDD or YYYY-MM-DD).")
 
     parser_day.add_argument("--datadir",
                             type=pathlib.Path,
@@ -186,17 +202,6 @@ def cli_args():
                              help="Name of the directory containing the "
                                   "results [default: longest common substring "
                                   "of the input file].")
-
-    parser.add_argument("--outputdir",
-                        type=pathlib.Path,
-                        default=os.getcwd(),
-                        help="Where the directory with the elaborated data "
-                             "will be saved [default: '.'].")
-
-
-    parser.add_argument("--encoding",
-                        default='utf-8',
-                        help="Encoding of input files [default: 'utf-8'].")
 
     args = parser.parse_args()
 
