@@ -74,6 +74,19 @@ ch.setFormatter(formatter)
 logger.addHandler(ch)
 ##########
 
+initial_comment = \
+"""# Wikimedia page request counts for {date} (YYYY-MM-DD)
+#
+# Each line shows 'language page daily-total hourly-counts'
+#
+#
+# Counts format: only hours with page view count > 0 (or data missing) are represented,
+#
+# Hour 0..23 shown as A..X (saves up to 22 bytes per line compared to comma separated values), followed by view count.
+#
+# Page titles are shown unmodified (preserves sort sequence)
+#"""
+
 
 hour_to_letter = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O',
                   'P','Q','R','S','T','U','V','W','X']
@@ -94,8 +107,8 @@ def concat_hours(hours_data):
     return encoded_views_string
 
 
-date_pattern = r'[0-9]{8}-[0-9]{6}'
-regex_date = re.compile(date_pattern)
+datetime_pattern = r'[0-9]{8}-[0-9]{6}'
+regex_datetime = re.compile(datetime_pattern)
 def date_parser(timestamp):
     return datetime.datetime.strptime(timestamp, '%Y%m%d-%H%M%S')
 
@@ -105,16 +118,30 @@ def cli_args():
     def valid_date_type(arg_date_str):
         """custom argparse *date* type for user dates values given from the
            command line"""
-        try:
-            return datetime.datetime.strptime(arg_date_str, "%Y%m%d")
-        except ValueError:
-            msg = "Given Date ({0}) not valid! Expected format, YYYYMMDD!"\
-                  .format(arg_date_str)
-            raise argparse.ArgumentTypeError(msg)
+        for fmt in ('%Y-%m-%d', '%Y%m%d'):
+            try:
+                return datetime.strptime(arg_date_str, fmt)
+            except ValueError:
+                pass
+
+        msg = "Given date ({0}) not valid! Expected formats: "
+              "YYYY-MM-DD, YYYYMMDD"\
+              .format(arg_date_str)
+        raise argparse.ArgumentTypeError(msg)
 
 
     parser = argparse.ArgumentParser(
         description="Merge Wikipedia's pagecounts-raw to get pagecounts-ez.")
+
+    parser.add_argument("--outputdir",
+                        type=pathlib.Path,
+                        default=os.getcwd(),
+                        help="Where the directory with the elaborated data "
+                             "will be saved [default: '.'].")
+
+    parser.add_argument("--encoding",
+                        default='utf-8',
+                        help="Encoding of input files [default: 'utf-8'].")
 
     subparsers = parser.add_subparsers(title='subcommands',
                                        description='valid subcommands',
@@ -128,7 +155,8 @@ def cli_args():
     parser_day.add_argument("date",
                             metavar='<date>',
                             type=valid_date_type,
-                            help="Date to process (format: YYYYMMDD).")
+                            help="Date to process (avalilable formats: "
+                                 "YYYYMMDD or YYYY-MM-DD).")
 
     parser_day.add_argument("--datadir",
                             type=pathlib.Path,
@@ -158,16 +186,10 @@ def cli_args():
                                   "[default: longest common substring "
                                   "of the input file].")
 
-    parser.add_argument("--outputdir",
-                        type=pathlib.Path,
-                        default=os.getcwd(),
-                        help="Where the directory with the elaborated data "
-                             "will be saved [default: '.'].")
-
-
-    parser.add_argument("--encoding",
-                        default='utf-8',
-                        help="Encoding of input files [default: 'utf-8'].")
+    parser_list.add_argument('--date',
+                             type=valid_date_type,
+                             help="Date to process (avalilable formats: "
+                                  "YYYYMMDD or YYYY-MM-DD).")
 
     args = parser.parse_args()
 
@@ -180,6 +202,7 @@ if __name__ == "__main__":
     outputdir = os.path.abspath(str(args.outputdir))
     encoding = args.encoding
 
+    comment_date = ''
     if args.subcommand == 'day':
         input_date = args.date
         input_date_str = input_date.date().strftime('%Y%m%d')
@@ -195,7 +218,10 @@ if __name__ == "__main__":
         input_files = [f for f in glob.iglob(pathfile)]
         input_files_count = len(input_files)
 
-        output_name = '{}.csv'.format(input_date_str)
+        output_date_str = input_date.date().strftime('%Y-%m-%d')
+        output_name = 'pagecounts-{}'.format(output_date_str)
+
+        comment_date = output_date_str
 
     else:
         import re
@@ -210,12 +236,35 @@ if __name__ == "__main__":
             return substr
 
         input_files = args.input_files
+        basenames = [os.path.basename(inp) for inp in input_files]
 
         if args.output is None:
-            basenames = [os.path.basename(inp) for inp in input_files]
             output_name = re.sub("[^\\w]$", "", long_substr(basenames))
         else:
             output_name = args.output
+
+        if args.date is None:
+            date_pattern = r'[0-9]{8}'
+            regex_date = re.compile(datetime_pattern)
+
+            dates = [regex_date.search(base).group()
+                     for base in basenames
+                     if regex_date.search(base).group() is not None]
+
+            if len(dates) > 1:
+                date_str = dates[0]
+
+                try:
+                    input_date = date_parser(date_str)
+                    comment_date = input_date.date().strftime('%Y-%m-%d')
+                except:
+                    comment_date = output_name
+            else:
+                comment_date = output_name
+
+        else:
+            input_date = args.date
+            comment_date = input_date.date().strftime('%Y-%m-%d')
 
 
     logger.debug('output_name: {}'.format(output_name))
@@ -226,13 +275,11 @@ if __name__ == "__main__":
         logger.warn('No input files match: exiting')
         exit(1)
 
-    # for input_file in input_files:
-    #     print(input_file)
-    # exit(0)
-
     output_path = os.path.join(outputdir, output_name)
     output_file = open(output_path, 'w+')
+
     output_writer = csv.writer(output_file, delimiter=' ')
+    output_writer.write(initial_comment.format(date=comment_date))
 
     count_processed_input = 0
     count_total_lines = 0
@@ -252,7 +299,7 @@ if __name__ == "__main__":
                 filename, file_ext = os.path.splitext(input_basename)
 
                 timestamp = date_parser(
-                                regex_date.search(input_basename).group()
+                                regex_datetime.search(input_basename).group()
                                 )
                 timestamp_str = timestamp.strftime("%Y%m%d-%H%M%S")
                 logger.debug('timestamp: {}'.format(timestamp_str))
