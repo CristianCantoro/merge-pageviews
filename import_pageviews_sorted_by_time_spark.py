@@ -166,7 +166,7 @@ def cli_args():
     subparsers.required = True
     subparsers.dest = 'subcommand'
 
-    # create the parser for the "foo" command
+    # parser for the 'day' command
     parser_day = subparsers.add_parser('day')
 
     parser_day.add_argument("date",
@@ -191,8 +191,9 @@ def cli_args():
                             help="Extension of the pagecount files"
                                  "[default: '.gz'].")
 
-    # create the parser for the "bar" command
+    # parser for the 'list' command
     parser_list = subparsers.add_parser('list')
+
     parser_list.add_argument('input_files',
                              metavar='<file>',
                              nargs='+',
