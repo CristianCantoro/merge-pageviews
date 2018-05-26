@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-usage: import_pageviews_sorted_by_time_streaming.py [-h]
+usage: merge_pageviews_sorted_by_time_streaming.py [-h]
                                                     [--outputdir OUTPUTDIR]
                                                     [--encoding ENCODING]
                                                     {day,list} ...
