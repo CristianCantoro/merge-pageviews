@@ -140,7 +140,7 @@ def cli_args():
             except ValueError:
                 pass
 
-        msg = "Given date ({0}) not valid! Expected formats: "
+        msg = "Given date ({0}) not valid! Expected formats: "\
               "YYYY-MM-DD, YYYYMMDD"\
               .format(arg_date_str)
         raise argparse.ArgumentTypeError(msg)
