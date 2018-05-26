@@ -280,7 +280,7 @@ if __name__ == "__main__":
     output_file = open(output_path, 'w+')
 
     output_writer = csv.writer(output_file, delimiter=' ')
-    output_writer.write(initial_comment.format(date=comment_date))
+    output_file.write(initial_comment.format(date=comment_date))
 
     count_processed_input = 0
     count_total_lines = 0
