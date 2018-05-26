@@ -1,5 +1,23 @@
 #!/usr/bin/env python3
 """
+usage: import_pageviews_sorted_by_time_streaming.py [-h]
+                                                    [--outputdir OUTPUTDIR]
+                                                    [--encoding ENCODING]
+                                                    {day,list} ...
+
+Merge Wikipedia's pagecounts-raw to get pagecounts-ez.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --outputdir OUTPUTDIR
+                        Where the directory with the elaborated data will be
+                        saved [default: '.'].
+  --encoding ENCODING   Encoding of input files [default: 'utf-8'].
+
+subcommands:
+  valid subcommands
+
+  {day,list}            additional help
 ---
 
 merge-pageviews: Merge Wikipedia's pagecounts-raw to get pagecounts-ez.
