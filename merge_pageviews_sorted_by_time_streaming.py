@@ -176,8 +176,8 @@ def cli_args():
 
     parser_day.add_argument("--basename",
                             default='pagecounts-',
-                            help="Path where the pagecount files are located "
-                                 "[default: 'pagecounts-'].")
+                            help="Basename of pagecount files [default: "
+                                 "'pagecounts-'].")
 
     parser_day.add_argument("--extension",
                             default='.gz',
