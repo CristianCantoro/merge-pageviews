@@ -10,6 +10,7 @@ TODO
 usage: merge_pageviews_sorted_by_time_streaming.py [-h]
                                                    [--outputdir OUTPUTDIR]
                                                    [--encoding ENCODING]
+                                                   [--no-compress]
                                                    {day,list} ...
 
 Merge Wikipedia's pagecounts-raw to get pagecounts-ez.
@@ -20,12 +21,13 @@ optional arguments:
                         Where the directory with the elaborated data will be
                         saved [default: '.'].
   --encoding ENCODING   Encoding of input files [default: 'utf-8'].
+  --no-compress         Do not compress the output (default compresses with
+                        bz2).
 
 subcommands:
   valid subcommands
 
   {day,list}            additional help
-
 ```
 
 ### `day` subcommand

@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """
 usage: merge_pageviews_sorted_by_time_streaming.py [-h]
-                                                    [--outputdir OUTPUTDIR]
-                                                    [--encoding ENCODING]
-                                                    {day,list} ...
+                                                   [--outputdir OUTPUTDIR]
+                                                   [--encoding ENCODING]
+                                                   [--no-compress]
+                                                   {day,list} ...
 
 Merge Wikipedia's pagecounts-raw to get pagecounts-ez.
 
@@ -13,6 +14,8 @@ optional arguments:
                         Where the directory with the elaborated data will be
                         saved [default: '.'].
   --encoding ENCODING   Encoding of input files [default: 'utf-8'].
+  --no-compress         Do not compress the output (default compresses with
+                        bz2).
 
 subcommands:
   valid subcommands
@@ -144,6 +147,12 @@ def cli_args():
                         default='utf-8',
                         help="Encoding of input files [default: 'utf-8'].")
 
+    parser.add_argument("--no-compress",
+                        dest='compress',
+                        action='store_false',
+                        help="Do not compress the output (default "
+                             "compresses with bz2).")
+
     subparsers = parser.add_subparsers(title='subcommands',
                                        description='valid subcommands',
                                        help='additional help')
@@ -203,6 +212,7 @@ if __name__ == "__main__":
 
     outputdir = os.path.abspath(str(args.outputdir))
     encoding = args.encoding
+    compress_output = args.compress
 
     comment_date = ''
     if args.subcommand == 'day':
@@ -428,18 +438,21 @@ if __name__ == "__main__":
     logger.info('Pageviews merged and saved to {}.'.format(output_path))
     output_file.close()
 
-    logger.info('Compressing output to bz2 format.'.format(output_path))
-    compressor = bz2.BZ2Compressor()
-    compressed_filename = '{}.bz2'.format(output_path)
-    compressed_file = bz2.BZ2File(compressed_filename, 'wb', compresslevel=9)
-    with open(output_path, 'rb') as outfile:
-        for line in outfile:
-            compressed_file.write(line)
+    if compress_output:
+        logger.info('Compressing output to bz2 format.'.format(output_path))
 
-    compressed_file.flush()
-    compressed_file.close()
+        compressed_filename = '{}.bz2'.format(output_path)
 
-    logger.info('Remove uncompressed file: {}.'.format(output_path))
-    os.remove(output_path)
+        with bz2.BZ2File(compressed_filename, 'wb', compresslevel=9) \
+                as compressed_file:
+            with open(output_path, 'rb') as outfile:
+                for line in outfile:
+                    compressed_file.write(line)
+
+            compressed_file.flush()
+
+        logger.info('Remove uncompressed file: {}.'.format(output_path))
+        os.remove(output_path)
+
     logger.info('All done!')
     exit(0)
