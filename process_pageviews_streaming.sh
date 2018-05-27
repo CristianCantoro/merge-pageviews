@@ -207,16 +207,16 @@ function main() {
     now_seconds=$(date +"%s" -d "$now");
   done
 
-  declare -a parallel_options
-  parallel_options=( )
+  declare -a delay_option
+  delay_option=( )
   if [ ! -z "$delay" ]; then
-    parallel_options+=('--delay' "$delay")
+    delay_option+=('--delay' "$delay")
   fi
 
-  declare -a merge_options
-  merge_options=( )
+  declare -a compress_option
+  compress_option=( )
   if ! $compress; then
-    merge_options+=( '--no-compress' )
+    compress_option+=( '--no-compress' )
   fi
 
   set -x
@@ -225,13 +225,13 @@ function main() {
   #         day --datadir ./data/input/sorted_time/2007-12/
   #           20071211
 
-  parallel "${parallel_options[@]:+}" \
+  parallel "${delay_option[@]:+${delay_option[@]}}" \
            --results "$results" \
            --jobs "$njobs" \
            --colsep ' ' \
            --progress \
       ./merge_pageviews_sorted_by_time_streaming.py \
-        "${merge_options[@]:+}" \
+        "${compress_option[*]:+${compress_option[@]}}" \
         --outputdir "$outputdir" \
         --encoding "$encoding" \
             day --basename "$input_basename" \
