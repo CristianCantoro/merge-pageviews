@@ -434,12 +434,12 @@ if __name__ == "__main__":
     compressed_file = bz2.BZ2File(compressed_filename, 'wb', compresslevel=9)
     with open(output_path, 'rb') as outfile:
         for line in outfile:
-            compressed_data = compressor.compress(line)
-            compressed_file.write(compressed_data)
+            compressed_file.write(line)
 
-    compressed_data = compressor.flush()
-    compressed_file.write(compressed_data)
+    compressed_file.flush()
     compressed_file.close()
 
-    logger.debug('All done!')
+    logger.info('Remove uncompressed file: {}.'.format(output_path))
+    os.remove(output_path)
+    logger.info('All done!')
     exit(0)
