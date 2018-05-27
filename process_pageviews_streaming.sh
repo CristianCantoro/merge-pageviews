@@ -87,7 +87,7 @@ compress=true
 input_basename='pagecounts-'
 extension='.gz'
 njobs=1
-delay=0
+delay=''
 
 function cli_args() {
   while getopts ":o:e:nj:b:d:x:t:h" opt; do
@@ -202,7 +202,7 @@ function main() {
 
   declare -a parallel_options
   parallel_options=('-j' "$njobs")
-  if [ "$delay" -gt 0 ]; then
+  if [ ! -z "$delay" ]; then
     parallel_options+=('--delay' "$delay")
   fi
 
