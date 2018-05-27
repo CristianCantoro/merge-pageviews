@@ -69,6 +69,7 @@ Options:
   -o OUTPUTDIR     Where the directory with the elaborated data will be
                    saved [default: '.'].
   -e ENCODING      Encoding of input files [default: 'utf-8'].
+  -n               Do not compress the output (default: compress wuth bz2).
   -j NJOBS         Number of parallel jobs [default: 1].
   -d DATADIR       Path where the pagecount files are located [default: '.'].
   -b BASENAME      Basename of pagecount files [default: 'pagecounts-'].
@@ -107,11 +108,11 @@ function cli_args() {
       j)
         njobs="$OPTARG"
         ;;
-      b)
-        input_basename="$OPTARG"
-        ;;
       d)
         datadir="$OPTARG"
+        ;;
+      b)
+        input_basename="$OPTARG"
         ;;
       x)
         extension="$OPTARG"
@@ -198,44 +199,46 @@ function main() {
   touch "$date_list"
   while [ "$now_seconds"  -le "$end_seconds" ]; do
     now=$(date +"%Y-%m-%d" -d "@${now_seconds}")
-
+    now_month=$(date +"%Y-%m" -d "@${now_seconds}")
     # echodebug "--> now: $now"
-    echo "$now" >> "$date_list"
+    echo "$now $now_month" >> "$date_list"
 
     now=$(date +"%Y-%m-%d" -d "$now + 1 day");
     now_seconds=$(date +"%s" -d "$now");
   done
 
   declare -a parallel_options
-  parallel_options=('-j' "$njobs")
-  parallel_options+=('--results' "$results")
+  parallel_options=( )
   if [ ! -z "$delay" ]; then
     parallel_options+=('--delay' "$delay")
   fi
 
   declare -a merge_options
-  merge_options=( '--outputdir' "$outputdir" )
-  merge_options+=( '--encoding' "$encoding" )
-
+  merge_options=( )
   if ! $compress; then
     merge_options+=( '--no-compress' )
   fi
 
-  declare -a merge_day_options
-  merge_day_options=( '--datadir' "$datadir" )
-  merge_day_options+=( '--basename' "$input_basename" )
-  merge_day_options+=( '--extension' "$extension" )
-
   set -x
-
   # ./merge_pageviews_sorted_by_time_streaming.py
   #     --outputdir data/output/streaming/
   #         day --datadir ./data/input/sorted_time/2007-12/
   #           20071211
-  parallel "${parallel_options[@]}" \
-      ./merge_pageviews_sorted_by_time_streaming.py "${merge_options[@]}" \
-        day "${merge_day_options[@]}" \
-          "{}" < "$date_list"
+
+  parallel "${parallel_options[@]:+}" \
+           --results "$results" \
+           --jobs "$njobs" \
+           --colsep ' ' \
+           --progress \
+      ./merge_pageviews_sorted_by_time_streaming.py \
+        "${merge_options[@]:+}" \
+        --outputdir "$outputdir" \
+        --encoding "$encoding" \
+            day --basename "$input_basename" \
+                --extension "$extension" \
+                --datadir "${datadir}/{2}" \
+                  "{1}" :::: "$date_list"
+
 }
 
 
