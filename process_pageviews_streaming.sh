@@ -74,6 +74,8 @@ Options:
   -b BASENAME      Basename of pagecount files [default: 'pagecounts-'].
   -x EXTENSION     Extension of the pagecount files[default: '.gz'].
   -t DELAY         Delay between parallel jobs [default: 0].
+  -r RESULTS       Directory where to save parallel output
+                   [default: 'pageviews-results'].
   -h, --help       Show this help and exits.
 
 Example:
@@ -88,9 +90,10 @@ input_basename='pagecounts-'
 extension='.gz'
 njobs=1
 delay=''
+results='pageviews-results'
 
 function cli_args() {
-  while getopts ":o:e:nj:b:d:x:t:h" opt; do
+  while getopts ":o:e:nj:b:d:x:t:r:h" opt; do
     case $opt in
       o)
         outputdir="$OPTARG"
@@ -115,6 +118,9 @@ function cli_args() {
         ;;
       t)
         delay="$OPTARG"
+        ;;
+      r)
+        results="$OPTARG"
         ;;
       h)
         usage
@@ -202,6 +208,7 @@ function main() {
 
   declare -a parallel_options
   parallel_options=('-j' "$njobs")
+  parallel_options+=('--results' "$results")
   if [ ! -z "$delay" ]; then
     parallel_options+=('--delay' "$delay")
   fi
