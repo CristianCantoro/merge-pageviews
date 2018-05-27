@@ -45,6 +45,7 @@ See the LICENSE file in this repository for further details.
 import os
 import re
 import csv
+import bz2
 import gzip
 import glob
 import logging
@@ -364,6 +365,7 @@ if __name__ == "__main__":
         del sorted_data
         del uncompressed_data
 
+        logger.info('Process pageviews data.')
         count_processed_lines = 0
         with progressbar.ProgressBar(max_value=count_total_lines) as barproc:
             barproc.update(0)
@@ -423,5 +425,19 @@ if __name__ == "__main__":
                 count_processed_lines += 1
                 barproc.update(count_processed_lines)
 
-logger.debug('All done!')
-exit(0)
+    logger.info('Pageviews merged and saved to {}.'.format(output_path))
+    output_file.close()
+
+    logger.info('Compressing output to bz2 format.'.format(output_path))
+    compressor = bz2.BZ2Compressor()
+    compressed_filename = '{}.bz2'.format(output_path)
+    compressed_file = open(compressed_filename, 'wb+')
+    with open(output_file, 'rb') as data:
+        for line in handle:
+            compressed_data = compressor(line)
+            compressed_file.write(compressed_data)
+
+    compressed_file.close()
+
+    logger.debug('All done!')
+    exit(0)
