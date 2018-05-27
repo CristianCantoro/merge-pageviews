@@ -1,5 +1,6 @@
 # directories to ignore
 data/
+pageviews-results/
 
 # jupyter checkpoints dir
 .ipynb_checkpoints/
