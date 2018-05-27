@@ -431,12 +431,14 @@ if __name__ == "__main__":
     logger.info('Compressing output to bz2 format.'.format(output_path))
     compressor = bz2.BZ2Compressor()
     compressed_filename = '{}.bz2'.format(output_path)
-    compressed_file = open(compressed_filename, 'wb+')
-    with open(output_file, 'rb') as data:
-        for line in handle:
-            compressed_data = compressor(line)
+    compressed_file = bz2.BZ2File(compressed_filename, 'wb', compresslevel=9)
+    with open(output_path, 'rb') as outfile:
+        for line in outfile:
+            compressed_data = compressor.compress(line)
             compressed_file.write(compressed_data)
 
+    compressed_data = compressor.flush()
+    compressed_file.write(compressed_data)
     compressed_file.close()
 
     logger.debug('All done!')
