@@ -3,7 +3,49 @@ Merge Wikipedia pageviews with Python
 
 ## process
 
-TODO
+This script launches the merge script
+`merge_pageviews_sorted_by_time_streaming.py` (with `day` subcommand),
+over a range of dates.
+
+```
+ ./process_pageviews_streaming.sh -h
+Usage:
+  process_pageviews_streaming.sh [-o OUTPUTDIR] [-e ENCODING] [-n] [-j NJOBS]
+                                 [-d DATADIR] [-b BASENAME] [-x EXTENSION]
+                                 [-t DELAY] [-r RESULTS]
+                                 <start_date> <end_date>
+  process_pageviews_streaming.sh -h
+
+Process pageviews from <start_date> to <end_date>.
+
+Options:
+  -o OUTPUTDIR     Where the directory with the elaborated data will be
+                   saved [default: '.'].
+  -e ENCODING      Encoding of input files [default: 'utf-8'].
+  -n               Do not compress the output (default: compress wuth bz2).
+  -j NJOBS         Number of parallel jobs [default: 1].
+  -d DATADIR       Path where the pagecount files are located [default: '.'].
+  -b BASENAME      Basename of pagecount files [default: 'pagecounts-'].
+  -x EXTENSION     Extension of the pagecount files[default: '.gz'].
+  -t DELAY         Delay between parallel jobs [default: 0].
+  -r RESULTS       Directory where to save parallel output
+                   [default: 'pageviews-results'].
+  -h, --help       Show this help and exits.
+
+Example:
+  process_pageviews_streaming.sh 20071210 20071211
+```
+
+#### Example
+```
+./process_pageviews_streaming.sh \
+        -o ./data/output \
+        -d ./data/input \
+        -r ./process-results/process_20080101-20111115 \
+        -j 5 \
+        -t 5m \
+        20080101 20111115
+
 
 ## merge
 ```

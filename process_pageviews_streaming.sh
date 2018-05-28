@@ -48,10 +48,12 @@ echodebug() {
 
 function short_usage() {
   (>&2 echo "\
-Usage: process_pageviews_streaming.sh [-o OUTPUTDIR] [-e ENCODING]
-                                      [-d DATADIR] [-b BASENAME]
-                                      [-x EXTENSION]
-                                      <start_date> <end_date>
+Usage:
+  process_pageviews_streaming.sh [-o OUTPUTDIR] [-e ENCODING] [-n] [-j NJOBS]
+                                 [-d DATADIR] [-b BASENAME] [-x EXTENSION]
+                                 [-t DELAY] [-r RESULTS]
+                                 <start_date> <end_date>
+  process_pageviews_streaming.sh -h
 
 See process_pageviews_streaming.sh -h for further information.")
 
@@ -61,9 +63,11 @@ See process_pageviews_streaming.sh -h for further information.")
 function usage() {
   (>&2 echo "\
 Usage:
-  process_pageviews_streaming.sh [-o OUTPUTDIR] [-e ENCODING] [-d DATADIR]
-                                 [-b BASENAME] [-x EXTENSION]
+  process_pageviews_streaming.sh [-o OUTPUTDIR] [-e ENCODING] [-n] [-j NJOBS]
+                                 [-d DATADIR] [-b BASENAME] [-x EXTENSION]
+                                 [-t DELAY] [-r RESULTS]
                                  <start_date> <end_date>
+  process_pageviews_streaming.sh -h
 
 Process pageviews from <start_date> to <end_date>.
 
@@ -82,7 +86,7 @@ Options:
   -h, --help       Show this help and exits.
 
 Example:
-  process_pageviews_streaming.sh 20071210")
+  process_pageviews_streaming.sh 20071210 20071211")
 
   return
 }
