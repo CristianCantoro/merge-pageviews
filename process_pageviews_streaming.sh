@@ -54,6 +54,8 @@ Usage: process_pageviews_streaming.sh [-o OUTPUTDIR] [-e ENCODING]
                                       <start_date> <end_date>
 
 See process_pageviews_streaming.sh -h for further information.")
+
+  return
 }
 
 function usage() {
@@ -81,6 +83,8 @@ Options:
 
 Example:
   process_pageviews_streaming.sh 20071210")
+
+  return
 }
 
 outputdir='.'
@@ -173,6 +177,8 @@ function cli_args() {
               "<end_date>.")
     exit 1
   fi
+
+  return
 }
 
 
@@ -188,6 +194,7 @@ function main() {
   echodebug "input_basename: $input_basename"
   echodebug "extension: $extension"
   echodebug "delay: $delay"
+  echodebug "results: $results"
 
   echodebug "start_date: $start_date"
   echodebug "end_date: $end_date"
@@ -238,8 +245,9 @@ function main() {
                 --extension "$extension" \
                 --datadir "${datadir}/{2}" \
                   "{1}" :::: "$date_list"
+  set +x
 
+  return
 }
-
 
 main "$@"
