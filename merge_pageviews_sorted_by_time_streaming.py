@@ -181,7 +181,7 @@ def cli_args():
 
     parser_day.add_argument("--extension",
                             default='.gz',
-                            help="Extension of the pagecount files"
+                            help="Extension of the pagecount files "
                                  "[default: '.gz'].")
 
     # parser for the 'list' command
