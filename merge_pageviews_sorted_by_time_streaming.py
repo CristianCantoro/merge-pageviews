@@ -337,7 +337,7 @@ if __name__ == "__main__":
                             page = line[1]
                             views = int(line[2])
                         except Exception as e:
-                            logger.warn('Error - Corrupted line: {}'
+                            logger.warn('Error - Cannot parse line: {}'
                                     .format(e))
                             continue
 
