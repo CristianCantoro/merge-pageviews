@@ -327,7 +327,7 @@ if __name__ == "__main__":
                             line = next(compressed_reader)
                         except StopIteration:
                             break
-                        except:
+                        except Exception as err:
                             logger.warn('Error - Corrupted line: {}'
                                         .format(line))
                             continue
@@ -336,9 +336,9 @@ if __name__ == "__main__":
                             lang = line[0]
                             page = line[1]
                             views = int(line[2])
-                        except Exception as e:
+                        except Exception as err:
                             logger.warn('Error - Cannot parse line: {}'
-                                    .format(e))
+                                    .format(err))
                             continue
 
                         count_total_lines += 1
